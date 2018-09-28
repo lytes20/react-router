@@ -3,6 +3,7 @@ import PropTypes from "prop-types";
 import warning from "warning";
 
 import RouterContext from "./RouterContext";
+import deferredUpdates from "./utils/deferredUpdates";
 import warnAboutGettingProperty from "./utils/warnAboutGettingProperty";
 
 function getContext(props, state) {
@@ -60,11 +61,18 @@ class Router extends React.Component {
     };
 
     this.unlisten = props.history.listen(location => {
-      this.setState({ location });
+      Promise.resolve().then(() => {
+        deferredUpdates(() => {
+          if (!this.isUnmounted) {
+            this.setState({ location });
+          }
+        });
+      });
     });
   }
 
   componentWillUnmount() {
+    this.isUnmounted = true;
     this.unlisten();
   }
 
